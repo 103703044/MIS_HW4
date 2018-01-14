@@ -16,4 +16,5 @@ for image in fileList:
 	while(os.path.getsize(outputName) <= 500):
 		param = "--edge-thresh "+str(edge)+" --peak-thresh "+str(peak)
 		sift.process_image("./dataset/" + image, outputName, param)
+	print image[7:-4] + " has finished."
 

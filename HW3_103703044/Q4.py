@@ -66,31 +66,3 @@ def stopWords_preprocessed(stopWordNum, codewords):
     for i in xrange(len(codewords)):
         refinedCodewords.append(stopwordsRemoved(codewords[i], stopWordIndices))
     return (refinedCodewords, stopWordIndices)
-
-
-
-if __name__ == '__main__':
-
-	if os.path.exists("./Q3_Data.csv"):
-		os.remove("./Q3_Data.csv")
-# siftGroup = sift.read_features_from_file('./offline/sift/00000.sift')[1]
-	for i in fileList:
-		filePath = './offline/sift/'+ i + ".sift"
-		if 'siftGroup' in locals():
-			siftGroup = np.append(siftGroup,sift.read_features_from_file(filePath)[1],axis=0)
-		else :
-			siftGroup = sift.read_features_from_file(filePath)[1]
-
-	visual_vocabulary = KMeans(n_clusters=clustersNum, random_state=0).fit(siftGroup)
-
-
-	with open("./Q3.csv",'a') as save:
-		for i in fileList:
-			count = [0 for j in xrange(clustersNum)]
-			filePath = './offline/sift/'+ i + ".sift"
-			vocList = visual_vocabulary.predict(sift.read_features_from_file(filePath)[1])
-			for j in vocList:
-				count[j] += 1
-			data = pandas.DataFrame(count)
-			data.to_csv(save,header=True,index_label = filePath[-10:])
-
