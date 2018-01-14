@@ -3,6 +3,7 @@ import numpy as np
 import pandas
 from PIL import Image
 from scipy.fftpack import dct
+from scipy import spatial
 import math
 
 partitionSize = 8
@@ -132,6 +133,32 @@ def colorLayout_Euclidean(input,comparison):
 			bestImage = [comparison[row][0], distance]
 	return bestImage
 
+def colorLayout_Manhattan(input,comparison):
+	inputData = Color_Layout_Func(input)
+	bestImage = ['',float("inf")]
+	for row in xrange(0,len(comparison),4):
+		distance = 0
+		for i in xrange(3):
+			for j in xrange(64):
+				distance += abs((float(inputData[i][j])) - (float(comparison[row+i+1][j+1])))
+		if distance < bestImage[1]:
+			bestImage = [comparison[row][0], distance]
+	return bestImage
+
+def colorLayout_CosSimilarity(input,comparison):
+	inputData = Color_Layout_Func(input)
+	bestImage = ['',float("inf")]
+	for row in xrange (0,len(comparison),4):
+		inputArr = []
+		compArr = []
+		for i in xrange(3):
+			for j in xrange(64):
+				inputArr.append(float(inputData[i][j]))
+				compArr.append(float(comparison[row+i+1][j+1]))
+		distance = spatial.distance.cosine(inputArr,compArr)
+		if distance < bestImage[1]:
+			bestImage = [comparison[row][0], distance]
+	return bestImage
 
 if __name__ == '__main__':
 

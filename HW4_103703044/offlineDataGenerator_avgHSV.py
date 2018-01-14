@@ -2,7 +2,7 @@ import os
 import numpy as np
 import pandas
 from PIL import Image
-from library import *
+from scipy import spatial
 import colorsys
 
 
@@ -52,6 +52,20 @@ def avgHSV_Manhattan(input,comparison):
 		distance = 0
 		for i in xrange(3):
 			distance += abs((float(inputData[i])) -(float(comparison[row+i+1][1])))
+		if distance < bestImage[1]:
+			bestImage = [comparison[row][0], distance]
+	return bestImage
+
+def avgHSV_CosSimilarity(input,comparison):
+	inputData = avg_HSV_Func(input)
+	bestImage = ['',float("inf")]
+	for row in xrange (0,len(comparison),4):
+		inputArr = []
+		compArr = []
+		for i in xrange(3):
+			inputArr.append(float(inputData[i]))
+			compArr.append(float(comparison[row+i+1][1]))
+		distance = spatial.distance.cosine(inputArr,compArr)
 		if distance < bestImage[1]:
 			bestImage = [comparison[row][0], distance]
 	return bestImage

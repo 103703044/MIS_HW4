@@ -4,7 +4,6 @@ import os
 from matplotlib import *
 from offlineDataGenerator_avgRGB import *
 from offlineDataGenerator_avgHSV import *
-from offlineDataGenerator_ColorHistogram import *
 from offlineDataGenerator_ColorLayout import *
 
 import pickle
@@ -19,7 +18,6 @@ from PIL import Image
 import math
 import csv
 
-global imgs
 global thumb
 global thumb_mosaic
 global baseImage
@@ -48,19 +46,14 @@ class Example(Frame):
 
         #Default_file
         self.fileName = StringVar(value = "./dataset/ukbench00000.jpg")
-        # albl = Label(self, textvariable = self.fileName)
-        # albl.grid(row=0, column=2, columnspan=3, pady=5, sticky=W)
 
         #Image_SelectedFile
         self.thumb = Label(self)
         self.thumb.grid(row=0, column=1, pady=5, sticky=W)
         image = Image.open(self.fileName.get())
-        print image.size[0]
-        print image.size[1]
         image = ImageTk.PhotoImage(image.resize((600, 450),Image.ANTIALIAS))
         self.thumb.configure(image = image)
         self.thumb.image = image
-
         self.thumb_mosaic = Label(self)
         self.thumb_mosaic.grid(row=0,column =3,pady=5, sticky=W)
         self.thumb_mosaic.configure(image = image)
@@ -71,7 +64,7 @@ class Example(Frame):
         mode = StringVar(self)
         #default
         mode.set("AVG_RGB")
-        om = OptionMenu(self, mode, "Color_Layout", "Color_Histogram", "AVG_RGB","AVG_HSV")
+        om = OptionMenu(self, mode, "AVG_RGB", "AVG_HSV", "Color_Layout")
         om.grid(row=1, column=1, pady=5, sticky=W)
 
         #mode_SelectDistanceAlgo.
@@ -79,24 +72,18 @@ class Example(Frame):
         distanceMode = StringVar(self)
         #default
         distanceMode.set("Euclidean_Distance")
-        distanceOm = OptionMenu(self, distanceMode, "Euclidean_Distance", "Manhattan_Distance")
+        distanceOm = OptionMenu(self, distanceMode, "Euclidean_Distance", "Manhattan_Distance", "Cosine_Similarity")
         distanceOm.grid(row=2, column=1, pady=5, sticky=W)
 
         #mode_selectCutGrids
         Label(self, text = "Cut Into n*n grids. n = ").grid(row=3, column=0, pady=5,sticky=W)
-        self.grids =StringVar(value = "20")
+        self.grids =StringVar(value = "50")
         vcmd = (self.register(self.onValidate),'%d', '%i', '%P', '%s', '%S', '%v', '%V', '%W')
         self.gridsTextField = Entry(self,textvariable = self.grids, width = 3, validate = 'key', validatecommand = vcmd)
         self.gridsTextField.grid(row=3, column=1, pady=1 ,sticky=W)
        
        #Button_START
         Button(self, text = "START", command = lambda: startSearching(self.fileName.get(), mode.get(), distanceMode.get(), int(self.gridsTextField.get()))).grid(row=4, column=0, pady=5)
-        # self.imgs = []
-        # #RankList
-        # for i in xrange(10):
-        #     self.imgs.append(Label(self))
-        #     self.imgs[i].grid(row=i/5+4, column=i%5, padx=5, pady=10)
-
 
     def onValidate(self, d, i, P, s, S, v, V, W):
         return True if S in '1234567890' else False
@@ -126,6 +113,8 @@ def startSearching (fileName, mode, distanceMode, grids):
             formula = avgRGB_Euclidean
         elif distanceMode == "Manhattan_Distance":
             formula = avgRGB_Manhattan
+        elif distanceMode == "Cosine_Similarity":
+            formula = avgRGB_CosSimilarity
 
     elif mode == "AVG_HSV":
         csvName = "avg_HSV.csv"
@@ -133,14 +122,17 @@ def startSearching (fileName, mode, distanceMode, grids):
             formula = avgHSV_Euclidean
         elif distanceMode == "Manhattan_Distance":
             formula = avgHSV_Manhattan
+        elif distanceMode == "Cosine_Similarity":
+            formula = avgHSV_CosSimilarity
 
     elif mode == "Color_Layout":
         csvName = "ColorLayout.csv"
-        formula = colorLayout_Euclidean
-
-    elif mode == "Color_Histogram":
-        csvName = "ColorHistogram.csv"
-        formula = colorHistogram_Euclidean
+        if distanceMode == "Euclidean_Distance":
+            formula = colorLayout_Euclidean
+        elif distanceMode == "Manhattan_Distance":
+            formula = colorLayout_Manhattan
+        elif distanceMode == "Cosine_Similarity":
+            formula = colorLayout_CosSimilarity
 
     with open("./offlineData/" + csvName,'rb') as csvfile:
         Reader = csv.reader(csvfile)
@@ -154,8 +146,7 @@ def startSearching (fileName, mode, distanceMode, grids):
                 blockBoundary = (i*blockW, j*blockH, (i+1)*blockW, (j+1)*blockH)
                 imgCrop = baseImage.crop(blockBoundary)
                 res = formula(imgCrop,data)
-                print (' '*(3-len(str(i+1)))+str(i+1)+' x '+' '*(3-len(str(j+1)))+str(j+1) +' D = '+str(res[1]))
-                print res[0]
+                print (' '*(3-len(str(i+1)))+str(i+1)+'*' + str(j+1) +', minDistance = '+str(res[1]))+' ImageName: ' + res[0]
                 imgNew = Image.open("./dataset/" + res[0]).resize((blockW,blockH))
                 output.paste(imgNew, blockBoundary)
     output.save("./product.jpg","JPEG",quality=85, optimize=True, progressive=True)
@@ -166,36 +157,6 @@ def startSearching (fileName, mode, distanceMode, grids):
     app.thumb_mosaic.configure(image = image)
     app.thumb_mosaic.image = image
 
-    # print avg_RGB_Func(baseImage)
-    # print avg_HSV_Func(baseImage)
-    # # print Color_Histogram_Func(baseImage)
-    # print Color_Layout_Func(baseImage)
-    # print len(Color_Histogram_Func(baseImage)[0])
-    # print len(baseImage.histogram())
-    # if mode == "Q1-ColorHistogram":
-    #     rank = Q1.Q1_run(baseImage,fileList)
-  
-    # elif mode == "Q2-ColorLayout":
-    #     if os.path.exists("./offline/Q2_DCTData.csv"):
-    #         rank = Q2.Q2_offline_run(fileName,fileList)
-    #     else:
-    #         rank = Q2.Q2_run(baseImage,fileList)
-
-
-    # elif mode == "Q3-SIFT Visual Words":
-    # 	if os.path.exists("./Q3.csv"):
-    #         rank = Q3.Q3_offline_run(fileName,fileList)
-    # elif mode == "Q4-Visual Words using stop words":
-    #     if os.path.exists("./Q3.csv"):
-    #         rank = Q4.Q4_offline_run(fileName,fileList)
-
-    # for i in xrange(10):
-    #     imgName = "./dataset/" + rank[i][1]
-    #     image = Image.open(imgName)
-    #     image = ImageTk.PhotoImage(image.resize((int(image.size[0]*0.8), int(image.size[1]*0.8)),Image.ANTIALIAS))
-    #     app.imgs[i].configure(image = image)
-    #     app.imgs[i].image = image
-    #     print "Rank " + str(i+1) + " is number " + rank[i][1][7:-4] + ", distance is " + str(round(rank[i][0],3))
 
 if __name__ == '__main__':
     root = Tk()
