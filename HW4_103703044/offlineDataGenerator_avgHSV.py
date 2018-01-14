@@ -4,7 +4,7 @@ import pandas
 from PIL import Image
 from scipy import spatial
 import colorsys
-
+import math
 
 path = './dataset/'
 csvPath = "./offlineData/avg_HSV.csv"
